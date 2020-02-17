@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <!-- Latest compiled and minified CSS -->
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+      integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+      crossorigin="anonymous"
+    />
+
+    <!-- Optional theme -->
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
+      integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp"
+      crossorigin="anonymous"
+    />
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <!-- Latest compiled and minified JavaScript -->
+    <!-- <script
+      src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+      integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+      crossorigin="anonymous"
+    ></script> -->
+    <script src="./PapaParse-5.0.2/papaparse.js"></script>
+
+    <script>
+      function Mytest() {
+        const csv = document.querySelector('[type="file"]').files[0];
+
+        let save = [];
+
+        Papa.parse(csv, {
+          complete: function(results) {
+            console.log('results', results);
+
+            let ths = '';
+            let rows = '';
+
+            const header = results.data[0];
+            const body = results.data.slice(1, results.data.length);
+
+            for (let index = 0; index < header.length; index++) {
+              const element = header[index];
+
+              ths += `<th style="white-space: nowrap;">${element}</th>`;
+            }
+
+            for (let index = 0; index < body.length; index++) {
+              const element = body[index];
+
+              let tds = '';
+
+              save.push({
+                idMotivoAtrasoCancel: 0,
+                codigo: element[0],
+                descricao: element[1],
+                tipoMotivo: element[2] == 'Atraso' ? 1 : 2,
+                situacaoRegistro: 0,
+              });
+
+              for (let index = 0; index < element.length; index++) {
+                const td = element[index];
+
+                tds += `<td>${td}</td>`;
+              }
+              rows += `<tr>${tds}</tr>`;
+            }
+
+            document.querySelector(
+              '#theader-test',
+            ).innerHTML = `<tr>${ths}</tr>`;
+
+            document.querySelector('#tbody-test').innerHTML = rows;
+            console.log('save', save[0]);
+
+            axios.post(
+              'http://192.168.0.3:8040/api/v1/MotivoAtrasoCancel/PostMotivoAtrasoCancel',
+              save[0],
+            );
+          },
+        });
+      }
+
+      async function testAsync() {
+        const response = await axios.get(
+          'http://192.168.0.3:8040/api/v1/MotivoAtrasoCancel/GetListMotivoAtrasoCancel',
+        );
+
+        console.log('response', response);
+
+        let all = [];
+
+        let codigos = '';
+
+        response.data.forEach((element, index) => {
+          all.push({
+            codigo: element.codigo,
+            descricao: element.descricao,
+            index,
+          });
+          // codigos += `<div>${element.codigo}</div>`
+          codigos += `<div>${
+            element.tipoMotivo == 1 ? 'Atrasado' : 'Cancelamento'
+          }</div>`;
+        });
+
+        document.querySelector('#tableTest').innerHTML = codigos;
+
+        // console.log('element', element);
+
+        console.log('all', all);
+      }
+    </script>
+  </head>
+  <body>
+    <input type="file" onchange="Mytest()" />
+
+    <button type="button" onclick="testAsync()">LOG</button>
+
+    <div id="tableTest">
+      <table class="table table-striped dataTable">
+        <thead id="theader-test"></thead>
+        <tbody style="font-size:12px" id="tbody-test"></tbody>
+      </table>
+    </div>
+  </body>
+</html>
